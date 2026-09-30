@@ -18,3 +18,7 @@ public interface IUserDAO {
     // Phương thức xử lý Transaction
     void addUserTransaction(User user, int[] permissionIds) throws SQLException;
 }
+public interface IUserDAO {
+    // Các phương thức cũ...
+    void insertUpdateUseTransaction() throws SQLException;
+}

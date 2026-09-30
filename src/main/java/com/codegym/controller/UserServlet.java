@@ -23,3 +23,12 @@ private void insertUser(HttpServletRequest request, HttpServletResponse response
         // Quay lại trang danh sách sau khi lưu thành công
         response.sendRedirect("users");
     }
+    case "test-use-tran":
+    testUseTran(request, response);
+    break;
+    private void testUseTran(HttpServletRequest request, HttpServletResponse response) 
+        throws SQLException, IOException, ServletException {
+    userDAO.insertUpdateUseTransaction();
+    System.out.println("Hoàn tất gọi hàm testUseTran!");
+    response.sendRedirect("users");
+}
