@@ -22,3 +22,9 @@ public interface IUserDAO {
     // Các phương thức cũ...
     void insertUpdateUseTransaction() throws SQLException;
 }
+public interface IUserDAO {
+   
+    List<User> selectAllUsersStore() throws SQLException;
+    void updateUserStore(User user) throws SQLException;
+    void deleteUserStore(int id) throws SQLException;
+}

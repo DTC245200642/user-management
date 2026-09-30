@@ -32,3 +32,8 @@ private void insertUser(HttpServletRequest request, HttpServletResponse response
     System.out.println("Hoàn tất gọi hàm testUseTran!");
     response.sendRedirect("users");
 }
+List<User> listUser = userDAO.selectAllUsersStore();
+request.setAttribute("listUser", listUser);
+User book = new User(id, name, email, country);
+userDAO.updateUserStore(book);
+userDAO.deleteUserStore(id);
