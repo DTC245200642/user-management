@@ -1,40 +1,67 @@
 @Override
-    public List<User> selectAllUsersStore() throws SQLException {
-        List<User> users = new ArrayList<>();
-        String query = "{CALL select_all_users()}";
-        try (Connection connection = getConnection();
-             CallableStatement statement = connection.prepareCall(query);
-             ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String name = rs.getString("name");
-                String email = rs.getString("email");
-                String country = rs.getString("country");
-                users.add(new User(id, name, email, country));
+public void addUserTransaction(User user, int[] permissionIds) throws SQLException {
+    Connection connection = null;
+    PreparedStatement pstmtUser = null;
+    PreparedStatement pstmtAssignment = null;
+    ResultSet rs = null;
+    
+    try {
+        connection = getConnection();
+        
+        // 1. Tắt auto-commit để bắt đầu Transaction
+        connection.setAutoCommit(false);
+        
+        // 2. Chèn dữ liệu vào bảng users và lấy lại ID vừa tạo
+        String insertUserSql = "INSERT INTO users (name, email, country) VALUES (?, ?, ?)";
+        pstmtUser = connection.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS);
+        pstmtUser.setString(1, user.getName());
+        pstmtUser.setString(2, user.getEmail());
+        pstmtUser.setString(3, user.getCountry());
+        pstmtUser.executeUpdate();
+        
+        // 3. Lấy ID của user vừa được chèn
+        rs = pstmtUser.getGeneratedKeys();
+        int userId = 0;
+        if (rs.next()) {
+            userId = rs.getInt(1);
+        }
+        
+        // 4. Chèn dữ liệu vào bảng user_permission
+        if (permissionIds != null && permissionIds.length > 0) {
+            String insertPermissionSql = "INSERT INTO user_permission (user_id, permission_id) VALUES (?, ?)";
+            pstmtAssignment = connection.prepareStatement(insertPermissionSql);
+            
+            for (int permissionId : permissionIds) {
+                pstmtAssignment.setInt(1, userId);
+                pstmtAssignment.setInt(2, permissionId);
+                pstmtAssignment.executeUpdate();
             }
         }
-        return users;
-    }
-
-    @Override
-    public void updateUserStore(User user) throws SQLException {
-        String query = "{CALL update_user(?, ?, ?, ?)}";
-        try (Connection connection = getConnection();
-             CallableStatement statement = connection.prepareCall(query)) {
-            statement.setInt(1, user.getId());
-            statement.setString(2, user.getName());
-            statement.setString(3, user.getEmail());
-            statement.setString(4, user.getCountry());
-            statement.executeUpdate();
+        
+        // 5. Nếu mọi thứ thành công, tiến hành Commit
+        connection.commit();
+        System.out.println("Transaction đã được commit thành công!");
+        
+    } catch (SQLException e) {
+        // 6. Nếu có lỗi xảy ra, Rollback lại toàn bộ dữ liệu
+        try {
+            if (connection != null) {
+                connection.rollback();
+                System.out.println("Có lỗi xảy ra! Transaction đã bị rollback.");
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        e.printStackTrace();
+    } finally {
+        // 7. Dọn dẹp tài nguyên và bật lại auto-commit
+        if (rs != null) rs.close();
+        if (pstmtUser != null) pstmtUser.close();
+        if (pstmtAssignment != null) pstmtAssignment.close();
+        if (connection != null) {
+            connection.setAutoCommit(true);
+            connection.close();
         }
     }
-
-    @Override
-    public void deleteUserStore(int id) throws SQLException {
-        String query = "{CALL delete_user(?)}";
-        try (Connection connection = getConnection();
-             CallableStatement statement = connection.prepareCall(query)) {
-            statement.setInt(1, id);
-            statement.executeUpdate();
-        }
-    }
+}
+String insertUserSql = "INSERT INTO users_wrong (name, email, country) VALUES (?, ?, ?)";
